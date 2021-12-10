@@ -1,0 +1,31 @@
+name: "Checkout"
+description: "Checkout code"
+inputs:
+  verify-branch:
+    description: If set this action will fail if the branch is not the specified one
+    required: false
+    default: null
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Verify Branch
+      if: inputs.verify-branch != null
+      shell: bash
+      run: |
+        if [ "${{github.ref}}" != "refs/heads/${{ inputs.verify-branch }}" ]; then
+          echo Job is restricted to "${{ inputs.verify-branch }}" branch
+          exit 1
+        fi
+
+    - name: Clean Workspace
+      uses: AutoModality/action-clean@v1.1.0
+
+    - if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target'}}
+      uses: actions/checkout@v2.4.0
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target'}}
+      uses: actions/checkout@v2.4.0
